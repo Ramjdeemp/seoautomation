@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SEO Analyzer</title>
+    <link rel="stylesheet" href="dashboard.css">
+</head>
+<body>
+    <header class="navbar">
+        <div class="logo">
+            SEO Analyzer
+        </div>
+        <div class="user-area">
+            <a id="userEmail" href="login.php">Not signed in, Sign in?</a>
+            <button id="logoutBtn">Logout</button>
+        </div>
+    </header>
+    <main class="dashboard">
+        <section class="hero">
+            <div>
+                <h1>SEO Performance</h1>
+                <p>
+                    Analyze your Google Search Console keywords,
+                    traffic and search rankings.
+                </p>
+            </div>
+        </section>
+        <section class="controls">
+
+            <div class="control-group">
+                <label for="selectedProperty">
+                    Website
+                </label>
+                <select id="selectedProperty">
+                    <option value="">
+                        Select a website
+                    </option>
+                </select>
+            </div>
+            <div class="control-group">
+                <label for="startDate">
+                    Start date
+                </label>
+                <input
+                    type="date"
+                    id="startDate"
+                >
+            </div>
+            <div class="control-group">
+                <label for="endDate">
+                    End date
+                </label>
+                <input
+                    type="date"
+                    id="endDate"
+                >
+            </div>
+            <div class="control-group">
+                <label for="sortBy">
+                    Sort by
+                </label>
+                <select id="sortBy">
+                    <option value="clicks">
+                        Clicks
+                    </option>
+                    <option value="impressions">
+                        Impressions
+                    </option>
+                    <option value="ctr">
+                        CTR
+                    </option>
+                    <option value="position">
+                        Position
+                    </option>
+                </select>
+            </div>
+            <button
+                id="analyzeBtn"
+                class="analyze-btn"
+            >
+                Analyze
+            </button>
+        </section>
+        <section class="stats">
+            <div class="stat-card">
+                <span class="stat-title">
+                    Total Clicks
+                </span>
+                <strong id="totalClicks">
+                    —
+                </strong>
+            </div>
+            <div class="stat-card">
+                <span class="stat-title">
+                    Total Impressions
+                </span>
+                <strong id="totalImpressions">
+                    —
+                </strong>
+            </div>
+            <div class="stat-card">
+                <span class="stat-title">
+                    Average CTR
+                </span>
+                <strong id="averageCtr">
+                    —
+                </strong>
+            </div>
+            <div class="stat-card">
+                <span class="stat-title">
+                    Average Position
+                </span>
+                <strong id="averagePosition">
+                    —
+                </strong>
+            </div>
+        </section>
+        <section class="table-card">
+            <div class="table-header">
+                <div>
+                    <h2>Search Keywords</h2>
+                    <p>
+                        Search queries bringing visitors to your website.
+                    </p>
+                </div>
+                <span
+                    id="keywordCount"
+                    class="keyword-count"
+                >
+                    0 keywords
+                </span>
+            </div>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Keyword</th>
+                            <th>
+                                Clicks
+                            </th>
+                            <th>
+                                Impressions
+                            </th>
+                            <th>
+                                CTR
+                            </th>
+                            <th>
+                                Position
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody id="keywordTableBody">
+                        <tr class="empty-row">
+                            <td colspan="5">
+                                Run an analysis to see keyword data.
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+    <script src="dashboard.js"></script>
+</body>
+</html>
