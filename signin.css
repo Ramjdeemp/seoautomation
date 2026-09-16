@@ -1,0 +1,16 @@
+body {
+    margin: 0;
+}
+.signin-page{
+    min-height: 100vh;
+    display: grid;
+    place-items: center;
+    background-color: antiquewhite;
+}
+.signin-card {
+    display: grid;
+    place-items: center;
+    background-color: bisque;
+    padding: 20px;
+    border-radius: 10px;
+}

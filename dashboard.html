@@ -8,80 +8,47 @@
 </head>
 <body>
     <header class="navbar">
-        <div class="logo">
-            SEO Analyzer
-        </div>
+        <div class="logo">SEO Analyzer</div>
         <div class="user-area">
-            <a id="userEmail" href="login.php">Not signed in, Sign in?</a>
-            <button id="logoutBtn">Logout</button>
+            <img id="userAvatar" src="" alt="Avatar" style="display: none;">
+            <button id="logoutBtn" type="button" >Logout</button>
         </div>
     </header>
     <main class="dashboard">
         <section class="hero">
             <div>
                 <h1>SEO Performance</h1>
-                <p>
-                    Analyze your Google Search Console keywords,
-                    traffic and search rankings.
-                </p>
+                <p>Analyze your Google Search Console keywords, traffic and search rankings.</p>
             </div>
         </section>
-        <section class="controls">
-
+        <form id="seoForm" class="controls">
             <div class="control-group">
-                <label for="selectedProperty">
-                    Website
-                </label>
-                <select id="selectedProperty">
-                    <option value="">
-                        Select a website
-                    </option>
+                <label for="selectedProperty">Website</label>
+                <select id="selectedProperty" name="selected_domain" required>
+                    <option value="">Select a website</option>
                 </select>
             </div>
             <div class="control-group">
-                <label for="startDate">
-                    Start date
-                </label>
-                <input
-                    type="date"
-                    id="startDate"
-                >
+                <label for="startDate">Start date</label>
+                <input type="date" id="startDate" name="startdate" required>
             </div>
             <div class="control-group">
-                <label for="endDate">
-                    End date
-                </label>
-                <input
-                    type="date"
-                    id="endDate"
-                >
+                <label for="endDate">End date</label>
+                <input type="date" id="endDate" name="enddate" required>
             </div>
             <div class="control-group">
-                <label for="sortBy">
-                    Sort by
-                </label>
-                <select id="sortBy">
-                    <option value="clicks">
-                        Clicks
-                    </option>
-                    <option value="impressions">
-                        Impressions
-                    </option>
-                    <option value="ctr">
-                        CTR
-                    </option>
-                    <option value="position">
-                        Position
-                    </option>
+                <label for="sortBy">Sort by</label>
+                <select id="sortBy" name="sortby">
+                    <option value="clicks">Clicks</option>
+                    <option value="impressions">Impressions</option>
+                    <option value="ctr">CTR</option>
+                    <option value="position">Position</option>
                 </select>
             </div>
-            <button
-                id="analyzeBtn"
-                class="analyze-btn"
-            >
+            <button id="analyzeBtn" class="analyze-btn" type="submit">
                 Analyze
             </button>
-        </section>
+        </form>
         <section class="stats">
             <div class="stat-card">
                 <span class="stat-title">
@@ -161,6 +128,6 @@
             </div>
         </section>
     </main>
-    <script src="dashboard.js"></script>
+    <script src="script.js"></script>
 </body>
 </html>

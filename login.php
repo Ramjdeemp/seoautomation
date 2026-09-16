@@ -8,6 +8,8 @@
     $client->addScope('email');
     $client->addScope('profile');
     $client->addScope(Google\Service\SearchConsole::WEBMASTERS_READONLY);
+    $client->setAccessType("offline");
+    $client->setPrompt("consent");
     $authUrl = $client->createAuthUrl();
     header("Location: $authUrl");
     exit();

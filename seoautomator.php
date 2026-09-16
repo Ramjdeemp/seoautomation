@@ -1,5 +1,6 @@
 <?php
     require_once 'vendor/autoload.php';
+    include 'minheap.php';
     session_start();
     $client = new Google\Client();
     $client->setAuthConfig('client_secret.json');
@@ -11,6 +12,29 @@
         exit();
     }
     $service = new Google\Service\SearchConsole($client);
+    if($_SERVER['REQUEST_METHOD']==='GET'){
+        try{
+            $oauth2 = new Google\Service\Oauth2($client);
+            $userinfo = $oauth2->userinfo->get();
+            $sites = $service->sites->listSites();
+            $domainList = [];
+            foreach($sites->getSiteEntry() as $site){
+                $domainList[] = $site->getSiteUrl();
+            }
+            echo(json_encode([
+                'properties' => $domainList,
+                'user' =>  [
+                    'email' => $userinfo->email,
+                    'profilepic' => $userinfo->picture
+                ]
+            ]));
+            exit();
+        } catch(Exception $e){
+            http_response_code(500);
+            echo json_encode(['error'=> $e->getMessage()]);
+            exit();
+        }
+    }
     if($_SERVER['REQUEST_METHOD']==='POST'&&isset($_POST['selected_domain'])){
         $selectedProperty = $_POST['selected_domain'];
         $startdate = $_POST['startdate'];
@@ -19,7 +43,7 @@
         $request->setStartDate($startdate);
         $request->setEndDate($enddate);
         $request->setDimensions(['query']);    
-        $request->setRowLimit(50);
+        $request->setRowLimit(25000);
         $sortBy = $_POST['sortby'] ?? '';
         $allowedSorts = [ 'clicks', 'impressions', 'ctr', 'position' ];
         header('Content-Type: application/json');
@@ -33,7 +57,7 @@
         try {
             $response = $service->searchanalytics->query($selectedProperty, $request);
             $rows = $response->getRows();
-            $seodata = [];
+            $topK = new SplMinPriorityQueue();
             if(!empty($rows)){
                 foreach ($rows as $row){
                     $keyword = $row->getKeys()[0];
@@ -41,42 +65,40 @@
                     $impressions = $row->getImpressions(); 
                     $ctr = $row->getCtr(); 
                     $position = $row->getPosition(); 
-                    $seodata[] = [
+                    $item = [
                     "keyword" => $keyword,
                     "clicks" => $clicks,
                     "impressions" => $impressions,
                     "ctr" => $ctr,
                     "position" => $position
                     ];
+                    $priority = $item[$sortBy]; // sets the priority by which the objects are sorted to be stored in the heap
+                    if ($sortBy === 'position') {
+                        $priority = -$priority;
+                    }
+                    if($topK->count()<50){
+                        $topK->insert($item, $priority);
+                        continue;
+                    } else {
+                        $topK->setExtractFlags(SplPriorityQueue::EXTR_PRIORITY);
+                        $worstPriorityinHeap = $topK->top();
+                        $topK->setExtractFlags(SplPriorityQueue::EXTR_DATA);
+                        if($priority>$worstPriorityinHeap){
+                            $topK->extract();
+                            $topK->insert($item, $priority);
+                        }
+                    }
                 }
             }
-            switch ($sortBy) {
-                case "clicks":
-                    usort($seodata, function ($a, $b) {
-                        return $b["clicks"] <=> $a["clicks"];
-                    });
-                    break;
-
-                case "impressions":
-                    usort($seodata, function ($a, $b) {
-                        return $b["impressions"] <=> $a["impressions"];
-                    });
-                    break;
-
-                case "ctr":
-                    usort($seodata, function ($a, $b) {
-                        return $b["ctr"] <=> $a["ctr"];
-                    });
-                    break;
-
-                case "position":
-                    usort($seodata, function ($a, $b) {
-                        return $a["position"] <=> $b["position"];
-                    });
-                    break;
+            $seodata = [];
+            $topK->setExtractFlags(SplPriorityQueue::EXTR_DATA);
+            while (!$topK->isEmpty()) {
+                $seodata[] = $topK->extract(); 
             }
+            $seodata = array_reverse($seodata);
             $sendoverdata = json_encode(["data" => $seodata]);
             header('Content-Type: application/json');
+            echo($sendoverdata);
             exit();
         } catch(Exception $e){
             header('Content-Type: application/json');
