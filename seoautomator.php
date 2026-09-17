@@ -1,15 +1,35 @@
 <?php
     require_once 'vendor/autoload.php';
     include 'minheap.php';
+    $dotenv = Dotenv\Dotenv::createImmutable(__DIR__);
+    $dotenv->load();
+    session_set_cookie_params([
+        'path' => '/',
+        'domain' => '',
+        'secure' => false,
+        'httponly' => true,
+        'samesite' => 'Lax'
+    ]);
     session_start();
     $client = new Google\Client();
     $client->setAuthConfig('client_secret.json');
     $client->addScope(Google\Service\SearchConsole::WEBMASTERS_READONLY);
-    if(isset($_SESSION['authusertoken'])){
-        $client->setAccessToken($_SESSION['authusertoken']);
+    if(isset($_SESSION['authusertoken_cipher'])){
+        $rawPassphrase = $_ENV['APP_ENCRYPTION_KEY'];
+        $encryptionKey = hash('sha256', $rawPassphrase, true);
+        $ciphertext = $_SESSION['authusertoken_cipher'];
+        $iv = hex2bin($_SESSION['authusertoken_iv']);
+        $tag = hex2bin($_SESSION['authusertoken_tag']);
+        $decryptedJson = openssl_decrypt($ciphertext, 'aes-256-gcm', $encryptionKey, OPENSSL_RAW_DATA, $iv, $tag);
+        if ($decryptedJson === false) {
+            session_destroy();
+            header("location: login.html");
+            exit();
+        }
+        $rawToken = json_decode($decryptedJson, true);
+        $client->setAccessToken($rawToken);
     } else {
-        header("location: login.html");
-        exit();
+        header("location: signin.html");
     }
     $service = new Google\Service\SearchConsole($client);
     if($_SERVER['REQUEST_METHOD']==='GET'){

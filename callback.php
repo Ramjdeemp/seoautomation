@@ -3,7 +3,6 @@ require_once 'vendor/autoload.php';
 $dotenv = Dotenv\Dotenv::createImmutable(__DIR__);
 $dotenv->load();
 session_set_cookie_params([
-    'lifetime' => 3600,       // Session expires in 1 hour
     'path' => '/',
     'domain' => '',           // Current domain
     'secure' => false,        // Set to TRUE when you deploy to a live HTTPS server!
@@ -25,7 +24,6 @@ if (!isset($_GET['code'])) {
     die("Authorization failed");
 }
 $token = $client->fetchAccessTokenWithAuthCode($_GET['code']);
-$tokenString = json_encode($token);
 if (isset($token['error'])) {
     die("OAuth error");
 }
@@ -39,5 +37,5 @@ $_SESSION['authusertoken_cipher'] = $encryptedToken;
 $_SESSION['authusertoken_iv'] = bin2hex($iv);
 $_SESSION['authusertoken_tag'] = bin2hex($tag);
 header("Location: dashboard.html");
-exit();
+exit(); 
 ?>
