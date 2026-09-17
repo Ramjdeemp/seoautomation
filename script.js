@@ -4,11 +4,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (logoutBtn) {
         logoutBtn.addEventListener('click', () => {
+            console.log("Logout button clicked!");
             window.location.href = 'logout.php'; 
         });
     }
 
-    // --- NEW: Set Default Dates (Last 30 Days) ---
+    // new date inputssss
     const startDateInput = document.getElementById('startDate');
     const endDateInput = document.getElementById('endDate');
     if (startDateInput && endDateInput) {
@@ -21,7 +22,7 @@ document.addEventListener('DOMContentLoaded', () => {
         startDateInput.value = thirtyDaysAgo.toISOString().split('T')[0];
     }
 
-    // --- MISSING: Call the function to load websites & avatar ---
+    // this shit js alls the function to load websites & avatar ---
     loadProperties();
 
     if (seoForm) {
@@ -64,21 +65,29 @@ document.addEventListener('DOMContentLoaded', () => {
 async function loadProperties() {
     try {
         const response = await fetch('seoautomator.php');
+        
         if (response.status === 401) {
-            document.getElementById('userEmail').textContent = "Not signed in, Sign in?";
+            window.location.href = 'signin.html';
             return; 
         }
+        
         const data = await response.json();
+        console.log("API Response:", data); // <-- This will reveal exactly what Google is doing!
+        
+        // NEW: Catch 500 errors and update the UI so it doesn't fail silently
+        if (!response.ok) {
+            const select = document.getElementById('selectedProperty');
+            select.innerHTML = `<option value="">Error: ${data.error || "Failed to load"}</option>`;
+            select.disabled = true;
+            return;
+        }
         
         if (data.user) {
-            const emailEl = document.getElementById('userEmail');
-            emailEl.textContent = data.user.email; 
-            emailEl.href = "#";
-
             const avatar = document.getElementById('userAvatar');
             if (data.user.profilepic && avatar) {
                 avatar.src = data.user.profilepic;
                 avatar.style.display = 'block';
+                avatar.title = data.user.email; 
             }
         }
 

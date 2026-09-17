@@ -23,13 +23,15 @@
         $decryptedJson = openssl_decrypt($ciphertext, 'aes-256-gcm', $encryptionKey, OPENSSL_RAW_DATA, $iv, $tag);
         if ($decryptedJson === false) {
             session_destroy();
-            header("location: login.html");
+            http_response_code(401);
             exit();
         }
         $rawToken = json_decode($decryptedJson, true);
         $client->setAccessToken($rawToken);
     } else {
-        header("location: signin.html");
+        http_response_code(401);
+        echo json_encode(["error" => "Unauthorized"]);
+        exit();
     }
     $service = new Google\Service\SearchConsole($client);
     if($_SERVER['REQUEST_METHOD']==='GET'){
@@ -37,10 +39,23 @@
             $oauth2 = new Google\Service\Oauth2($client);
             $userinfo = $oauth2->userinfo->get();
             $sites = $service->sites->listSites();
+            $siteEntries = $sites->getSiteEntry();
+            if (empty($siteEntries)) {
+                header('Content-Type: application/json; charset=utf-8');
+                echo json_encode([
+                    'properties' => [], // Sends empty array to trigger your JS
+                    'user' => [
+                        'email' => $userinfo->email,
+                        'profilepic' => $userinfo->picture
+                    ]
+                ]);
+                exit(); // Kills the script right here
+            }
             $domainList = [];
-            foreach($sites->getSiteEntry() as $site){
+            foreach($siteEntries as $site){
                 $domainList[] = $site->getSiteUrl();
             }
+            header('Content-Type: application/json; charset=utf-8');
             echo(json_encode([
                 'properties' => $domainList,
                 'user' =>  [
@@ -51,6 +66,8 @@
             exit();
         } catch(Exception $e){
             http_response_code(500);
+            header('Content-Type: application/json; charset=utf-8');
+            // Temporarily outputting the REAL error directly to the browser
             echo json_encode(['error'=> $e->getMessage()]);
             exit();
         }
@@ -59,6 +76,19 @@
         $selectedProperty = $_POST['selected_domain'];
         $startdate = $_POST['startdate'];
         $enddate = $_POST['enddate'];
+        // --- NEW: PROPERTY VALIDATION PART ---
+        $sites = $service->sites->listSites();
+        $validProperties = [];
+        foreach($sites->getSiteEntry() as $site){
+            $validProperties[] = $site->getSiteUrl();
+        }
+        if (!in_array($selectedProperty, $validProperties, true)) {
+            http_response_code(403);
+            echo json_encode(['error' => 'Unauthorized property access']);
+            exit();
+        }
+        // ---- end -----
+
         $request = new Google\Service\SearchConsole\SearchAnalyticsQueryRequest();
         $request->setStartDate($startdate);
         $request->setEndDate($enddate);
@@ -76,15 +106,23 @@
         }
         try {
             $response = $service->searchanalytics->query($selectedProperty, $request);
+            $updatedToken = $client->getAccessToken();
+            if($updatedToken['access_token']!==$rawToken['access_token']){  
+                $iv = random_bytes(12);
+                $encryptedToken = openssl_encrypt(json_encode($updatedToken), 'aes-256-gcm', $encryptionKey, OPENSSL_RAW_DATA, $iv, $tag);
+                $_SESSION['authusertoken_cipher'] = $encryptedToken;
+                $_SESSION['authusertoken_iv'] = bin2hex($iv);
+                $_SESSION['authusertoken_tag'] = bin2hex($tag);
+            }
             $rows = $response->getRows();
             $topK = new SplMinPriorityQueue();
             if(!empty($rows)){
                 foreach ($rows as $row){
                     $keyword = $row->getKeys()[0];
-                    $clicks = $row->getClicks();
-                    $impressions = $row->getImpressions(); 
-                    $ctr = $row->getCtr(); 
-                    $position = $row->getPosition(); 
+                    $clicks = (int)  $row->getClicks();
+                    $impressions = (int) $row->getImpressions(); 
+                    $ctr = (float) $row->getCtr(); 
+                    $position = (float) $row->getPosition(); 
                     $item = [
                     "keyword" => $keyword,
                     "clicks" => $clicks,
