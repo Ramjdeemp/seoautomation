@@ -84,10 +84,21 @@ async function loadProperties() {
         
         if (data.user) {
             const avatar = document.getElementById('userAvatar');
-            if (data.user.profilepic && avatar) {
-                avatar.src = data.user.profilepic;
-                avatar.style.display = 'block';
-                avatar.title = data.user.email; 
+            const email = data.user.email;
+            
+            if (data.user.profilepic) {
+                const img = new Image();
+                img.onload = () => {
+                    avatar.src = data.user.profilepic;
+                    avatar.style.display = 'block';
+                    avatar.title = email;
+                };
+                img.onerror = () => {
+                    showInitialAvatar(avatar, email);
+                };
+                img.src = data.user.profilepic;
+            } else {
+                showInitialAvatar(avatar, email);
             }
         }
 
@@ -130,7 +141,7 @@ function updateDashboard(data) {
     let totalCtr = 0;
     let totalPosition = 0;
     document.getElementById('keywordCount').textContent = `${data.length} keywords`;
-    data.forEach(item => {
+data.forEach(item => {
         totalClicks += item.clicks;
         totalImpressions += item.impressions;
         totalCtr += item.ctr;
@@ -138,6 +149,11 @@ function updateDashboard(data) {
         const tr = document.createElement('tr');
         tr.innerHTML = `
             <td>${item.keyword}</td>
+            <td>
+                <a href="${item.page}" target="_blank" style="color: #8b7355; text-decoration: underline; font-size: 13px;">
+                    View Page &#8599;
+                </a>
+            </td>
             <td>${item.clicks}</td>
             <td>${item.impressions}</td>
             <td>${(item.ctr * 100).toFixed(2)}%</td>
@@ -145,8 +161,36 @@ function updateDashboard(data) {
         `;
         tbody.appendChild(tr);
     });
-    document.getElementById('totalClicks').textContent = totalClicks.toLocaleString();
-    document.getElementById('totalImpressions').textContent = totalImpressions.toLocaleString();
-    document.getElementById('averageCtr').textContent = ((totalCtr / data.length) * 100).toFixed(2) + '%';
-    document.getElementById('averagePosition').textContent = (totalPosition / data.length).toFixed(2);
+document.getElementById('totalClicks').textContent = totalClicks.toLocaleString();
+document.getElementById('totalImpressions').textContent = totalImpressions.toLocaleString();
+
+// CTR: (total clicks / total impressions) * 100
+const actualAverageCtr = totalImpressions > 0 
+    ? ((totalClicks / totalImpressions) * 100).toFixed(2)
+    : '0.00';
+document.getElementById('averageCtr').textContent = actualAverageCtr + '%';
+
+// Position: average of all positions
+const actualAveragePosition = data.length > 0 
+    ? (totalPosition / data.length).toFixed(2)
+    : '0.00';
+document.getElementById('averagePosition').textContent = actualAveragePosition;
+}
+function showInitialAvatar(avatarElement, email) {
+    const initials = email.split('@')[0].substring(0, 2).toUpperCase();
+    const colors = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A', '#98D8C8', '#F7DC6F'];
+    const hash = email.charCodeAt(0) + email.charCodeAt(email.length - 1);
+    const bgColor = colors[hash % colors.length];
+    
+    const svg = `
+        <svg width="40" height="40" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="20" cy="20" r="20" fill="${bgColor}"/>
+            <circle cx="20" cy="14" r="5" fill="white"/>
+            <ellipse cx="20" cy="28" rx="8" ry="6" fill="white"/>
+        </svg>
+    `;
+    
+    avatarElement.src = 'data:image/svg+xml;base64,' + btoa(svg);
+    avatarElement.style.display = 'block';
+    avatarElement.title = email;
 }

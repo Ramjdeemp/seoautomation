@@ -67,16 +67,15 @@
         } catch(Exception $e){
             http_response_code(500);
             header('Content-Type: application/json; charset=utf-8');
-            // Temporarily outputting the REAL error directly to the browser
+            // for outputting the REAL error directly to the browser i.e debug help
             echo json_encode(['error'=> $e->getMessage()]);
             exit();
         }
     }
     if($_SERVER['REQUEST_METHOD']==='POST'&&isset($_POST['selected_domain'])){
         $selectedProperty = $_POST['selected_domain'];
-        $startdate = $_POST['startdate'];
-        $enddate = $_POST['enddate'];
-        // --- NEW: PROPERTY VALIDATION PART ---
+        $startdate = date('Y-m-d', strtotime($_POST['startdate']));
+        $enddate = date('Y-m-d', strtotime($_POST['enddate']));
         $sites = $service->sites->listSites();
         $validProperties = [];
         foreach($sites->getSiteEntry() as $site){
@@ -92,7 +91,7 @@
         $request = new Google\Service\SearchConsole\SearchAnalyticsQueryRequest();
         $request->setStartDate($startdate);
         $request->setEndDate($enddate);
-        $request->setDimensions(['query']);    
+        $request->setDimensions(['query', 'page']);    
         $request->setRowLimit(25000);
         $sortBy = $_POST['sortby'] ?? '';
         $allowedSorts = [ 'clicks', 'impressions', 'ctr', 'position' ];
@@ -109,10 +108,11 @@
             $updatedToken = $client->getAccessToken();
             if($updatedToken['access_token']!==$rawToken['access_token']){  
                 $iv = random_bytes(12);
-                $encryptedToken = openssl_encrypt(json_encode($updatedToken), 'aes-256-gcm', $encryptionKey, OPENSSL_RAW_DATA, $iv, $tag);
+                $newTag = ""; 
+                $encryptedToken = openssl_encrypt(json_encode($updatedToken), 'aes-256-gcm', $encryptionKey, OPENSSL_RAW_DATA, $iv, $newTag);
                 $_SESSION['authusertoken_cipher'] = $encryptedToken;
                 $_SESSION['authusertoken_iv'] = bin2hex($iv);
-                $_SESSION['authusertoken_tag'] = bin2hex($tag);
+                $_SESSION['authusertoken_tag'] = bin2hex($newTag); 
             }
             $rows = $response->getRows();
             $topK = new SplMinPriorityQueue();
@@ -120,11 +120,13 @@
                 foreach ($rows as $row){
                     $keyword = $row->getKeys()[0];
                     $clicks = (int)  $row->getClicks();
+                    $pageUrl = $row->getKeys()[1];
                     $impressions = (int) $row->getImpressions(); 
                     $ctr = (float) $row->getCtr(); 
                     $position = (float) $row->getPosition(); 
                     $item = [
                     "keyword" => $keyword,
+                    "page" => $pageUrl,
                     "clicks" => $clicks,
                     "impressions" => $impressions,
                     "ctr" => $ctr,
