@@ -10,6 +10,9 @@
     $client->addScope(Google\Service\SearchConsole::WEBMASTERS_READONLY);
     $client->setAccessType("offline");
     $client->setPrompt("consent");
+    $state = bin2hex(random_bytes(32));
+    $_SESSION["oauth_state"]=$state;
+    $client->setState($state);
     $authUrl = $client->createAuthUrl();
     header("Location: $authUrl");
     exit();

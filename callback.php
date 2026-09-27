@@ -23,7 +23,11 @@ $client->addScope(Google\Service\SearchConsole::WEBMASTERS_READONLY);
 if (!isset($_GET['code'])) {
     die("Authorization failed");
 }
-
+if ( !isset($_GET['state'], $_SESSION['oauth_state']) || !hash_equals($_SESSION['oauth_state'], $_GET['state'] )){
+    http_response_code(400);
+    die("Invalid OAuth state");
+}
+unset($_SESSION['oauth_state']);
 $token = $client->fetchAccessTokenWithAuthCode($_GET['code']);
 
 if (isset($token['error'])) {
